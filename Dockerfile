@@ -34,9 +34,11 @@ COPY --from=builder /app/prisma ./prisma
 
 # Set environment variables
 ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
 # Expose the port
 EXPOSE 3000
 
 # Start the application
-CMD ["npm", "start"] 
+CMD ["node", ".next/standalone/server.js"] 

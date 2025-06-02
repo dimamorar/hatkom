@@ -54,6 +54,7 @@ jobs:
           port: 22
           script: |
             cd /var/www/app
+            sudo chown -R deploy:deploy .
             git config --global --add safe.directory /var/www/app
             git pull origin main
             docker-compose down
