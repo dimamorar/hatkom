@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "./generated/prisma"
@@ -14,4 +8,64 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Add your models here
+model Vessel {
+  id         Int      @id @default(autoincrement())
+  name       String
+  imoNo      Int      @unique @map("imo_no")
+  vesselType Int      @map("vessel_type")
+  emissions  Emission[]
+
+  @@map("vessels")
+}
+
+model PPSCCReferenceLine {
+  id           Int      @id @default(autoincrement()) @map("row_id")
+  category     String
+  vesselTypeId Int      @map("vessel_type_id")
+  size         String
+  traj         String
+  a            Float
+  b            Float
+  c            Float
+  d            Float
+  e            Float
+
+  @@map("pp_scc_reference_lines")
+}
+
+model Emission {
+  id              Int      @id @default(autoincrement()) @map("eid")
+  vesselId        Int      @map("vessel_id")
+  logId           BigInt   @map("logid")
+  fromUtc         DateTime @map("from_utc")
+  toUtc           DateTime @map("to_utc")
+  met2wco2        Float    @map("met2wco2")
+  aet2wco2        Float    @map("aet2wco2")
+  bot2wco2        Float    @map("bot2wco2")
+  vrt2wco2        Float    @map("vrt2wco2")
+  totT2wco2       Float    @map("tot_t2wco2")
+  mew2wco2e       Float    @map("mew2wco2e")
+  aew2wco2e       Float    @map("aew2wco2e")
+  bow2wco2e       Float    @map("bow2wco2e")
+  vrw2wco2e       Float    @map("vrw2wco2e")
+  totW2wco2       Float    @map("tot_w2wco2")
+  mesox           Float    @map("mesox")
+  aesox           Float    @map("aesox")
+  bosox           Float    @map("bosox")
+  vrsox           Float    @map("vrsox")
+  totSox          Float    @map("tot_sox")
+  menox           Float    @map("menox")
+  aenox           Float    @map("aenox")
+  totNox          Float    @map("tot_nox")
+  mepm10          Float    @map("mepm10")
+  aepm10          Float    @map("aepm10")
+  totPm10         Float    @map("tot_pm10")
+  aerco2t2w       Float    @map("aerco2t2w")
+  aerco2ew2w      Float    @map("aerco2ew2w")
+  eeoico2ew2w     Float    @map("eeoico2ew2w")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  vessel          Vessel   @relation(fields: [vesselId], references: [id])
+
+  @@map("emissions")
+}
