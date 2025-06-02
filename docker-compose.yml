@@ -13,6 +13,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - app-network
     restart: unless-stopped
 
   db:
@@ -27,10 +29,16 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - app-network
     restart: unless-stopped
 
 volumes:
   postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
