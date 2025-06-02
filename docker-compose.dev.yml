@@ -4,16 +4,19 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     ports:
       - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/hatkom?schema=public
     depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
+      - db
+    command: npm run dev
 
   db:
     image: postgres:16-alpine
@@ -27,10 +30,22 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
+
+  prisma-studio:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "5555:5555"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/hatkom?schema=public
+    command: npx prisma studio
+    depends_on:
+      - db
 
 volumes:
   postgres_data:
