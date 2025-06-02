@@ -52,31 +52,35 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: 22
           script: |
-            # Update system and install required packages
-            sudo apt-get update
-            sudo apt-get install -y nginx certbot python3-certbot-nginx
+            # Function to check if a command exists
+            command_exists() {
+              command -v "$1" >/dev/null 2>&1
+            }
+
+            # Update system and install required packages if not already installed
+            if ! command_exists nginx; then
+              sudo -n apt-get update
+              sudo -n apt-get install -y nginx certbot python3-certbot-nginx
+            fi
 
             # Create app directory if it doesn't exist
-            sudo mkdir -p /var/www/app
+            sudo -n mkdir -p /var/www/app
             cd /var/www/app
 
             # Set proper permissions
-            sudo chown -R deploy:deploy .
+            sudo -n chown -R deploy:deploy .
             git config --global --add safe.directory /var/www/app
 
             # Pull latest changes
             git pull origin main
 
             # Setup Nginx configuration
-            sudo cp nginx.conf /etc/nginx/sites-available/hatkom.morar.dev
-            sudo ln -sf /etc/nginx/sites-available/hatkom.morar.dev /etc/nginx/sites-enabled/
+            sudo -n cp nginx.conf /etc/nginx/sites-available/hatkom.morar.dev
+            sudo -n ln -sf /etc/nginx/sites-available/hatkom.morar.dev /etc/nginx/sites-enabled/
 
             # Test Nginx configuration
-            sudo nginx -t
-
-            # Restart Nginx if configuration is valid
-            if [ $? -eq 0 ]; then
-              sudo systemctl restart nginx
+            if sudo -n nginx -t; then
+              sudo -n systemctl restart nginx
             else
               echo "Nginx configuration test failed"
               exit 1
@@ -84,9 +88,9 @@ jobs:
 
             # Setup SSL certificate if not already set up
             if [ ! -f /etc/letsencrypt/live/hatkom.morar.dev/fullchain.pem ]; then
-              sudo certbot --nginx -d hatkom.morar.dev --non-interactive --agree-tos --email ${{ secrets.ADMIN_EMAIL }}
+              sudo -n certbot --nginx -d hatkom.morar.dev --non-interactive --agree-tos --email ${{ secrets.ADMIN_EMAIL }}
             else
-              sudo certbot renew --quiet
+              sudo -n certbot renew --quiet
             fi
 
             # Restart Docker containers
