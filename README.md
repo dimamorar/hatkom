@@ -41,4 +41,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 This project is automatically deployed to VPS using GitHub Actions.
 
-Last deployment test: $(date)
+Last deployment test: $(date +"%Y-%m-%d %H:%M:%S")
