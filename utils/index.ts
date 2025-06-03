@@ -85,6 +85,29 @@ export function getChartSeries(
   ];
 }
 
+/**
+ * Sorts quarters chronologically (e.g., "Q1 2024", "Q2 2024", etc.)
+ * @param quarters Array of quarter strings in format "QX YYYY"
+ * @returns Sorted array of quarters
+ */
+export function sortQuartersChronologically(quarters: string[]): string[] {
+  return [...quarters].sort((a, b) => {
+    // Parse quarter and year from the quarter string (e.g., "Q1 2024")
+    const [aQuarter, aYear] = a.split(' ');
+    const [bQuarter, bYear] = b.split(' ');
+    
+    // Compare years first
+    if (aYear !== bYear) {
+      return parseInt(aYear) - parseInt(bYear);
+    }
+    
+    // If years are equal, compare quarters
+    const aQuarterNum = parseInt(aQuarter.substring(1));
+    const bQuarterNum = parseInt(bQuarter.substring(1));
+    return aQuarterNum - bQuarterNum;
+  });
+}
+
 export function avgDeviation(data: QuarterlyData[]): number {
   return data.length > 0
     ? parseFloat(

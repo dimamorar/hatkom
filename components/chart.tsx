@@ -17,6 +17,7 @@ import {
   formatQuarter,
   getChartSeries,
   isQuarterEnd,
+  sortQuartersChronologically,
 } from "@/utils";
 
 const Chart = () => {
@@ -93,7 +94,9 @@ const Chart = () => {
       verticalAlign: "bottom",
     },
     xAxis: {
-      categories: [...new Set(selectedData.map((d) => d.quarter))].sort(),
+      categories: sortQuartersChronologically([
+        ...new Set(selectedData.map((d) => d.quarter)),
+      ]),
       crosshair: true,
     },
     yAxis: {
@@ -110,7 +113,7 @@ const Chart = () => {
     },
     series: getChartSeries(selectedData, availableVessels, selectedVessel),
   };
-
+  console.log(chartOptions);
   return (
     <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
       <div className="max-w-7xl mx-auto">
