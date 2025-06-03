@@ -2,21 +2,25 @@
   {
     "Name": "BW KOBE",
     "IMONo": 9836476,
-    "VesselType": 1001
+    "VesselType": 1001,
+    "MaxDeadWg": 81703
   },
   {
     "Name": "BW OSAKA",
     "IMONo": 9836567,
-    "VesselType": 1001
+    "VesselType": 1001,
+    "MaxDeadWg": 81796
   },
   {
     "Name": "WORLD CREST",
     "IMONo": 9860386,
-    "VesselType": 1001
+    "VesselType": 1001,
+    "MaxDeadWg": 62569
   },
   {
     "Name": "WORLD DIANA",
     "IMONo": 9875214,
-    "VesselType": 1001
+    "VesselType": 1001,
+    "MaxDeadWg": 82032
   }
 ]

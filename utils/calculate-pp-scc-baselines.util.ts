@@ -1,10 +1,33 @@
-import { PPSCCReferenceLine } from '@/prisma/generated/prisma'
 import Decimal from 'decimal.js'
 
-type PPSSCPreferenceLine = Omit<
-  PPSCCReferenceLine,
-  'id' | 'category' | 'vesselTypeId' | 'size'
->
+type PPReference = {
+  RowID: number
+  Category: string
+  VesselTypeID: number
+  Size: string
+  Traj: string
+  a: number
+  b: number
+  c: number
+  d: number
+  e: number
+}
+
+type Vessel = {
+  Name: string
+  IMONo: number
+  VesselType: number
+  MaxDeadWg: number
+}
+
+type PPSSCPreferenceLine = {
+  a?: number
+  b?: number
+  c?: number
+  d?: number
+  e?: number
+  traj?: string
+}
 
 type CalculatePPBaselinesArgs = {
   factors: PPSSCPreferenceLine[]
@@ -22,7 +45,7 @@ type PPBaselines = {
 const yxLowF = 0.33
 const yxUpF = 1.67
 
-const emptyFactor = {
+const emptyFactor: PPSSCPreferenceLine = {
   traj: '',
   a: 0,
   b: 0,
@@ -31,46 +54,34 @@ const emptyFactor = {
   e: 0,
 }
 
+export const getPPFactors = (ppReference: PPReference[], vessel: Vessel): {
+  minFactors: PPSSCPreferenceLine
+  strFactors: PPSSCPreferenceLine
+}[] => {
+  const vesselTypeFactors = ppReference.filter(ref => 
+    ref.VesselTypeID === vessel.VesselType && 
+    ref.Category?.toUpperCase() === 'PP'
+  );
+
+  const minFactors = vesselTypeFactors.find(f => f.Traj?.trim() === 'MIN');
+  const strFactors = vesselTypeFactors.find(f => f.Traj?.trim() === 'STR');
+
+  return [{
+    minFactors: minFactors ?? emptyFactor,
+    strFactors: strFactors ?? emptyFactor,
+  }]
+}
+
 export const calculatePPSCCBaselines = ({
   factors,
   year,
   DWT,
 }: CalculatePPBaselinesArgs): PPBaselines => {
-  const { minFactors, strFactors } = factors.reduce<{
-    minFactors: PPSSCPreferenceLine
-    strFactors: PPSSCPreferenceLine
-  }>(
-    (acc, cur) => {
-      const key = (() => {
-        // Keep trim since Traj contain spaces
-        switch (cur.traj?.trim()) {
-          case 'MIN':
-            return 'minFactors'
-          case 'STR':
-            return 'strFactors'
-          default:
-            return null
-        }
-      })()
-
-      if (!key) {
-        return acc
-      }
-
-      return {
-        ...acc,
-        [key]: cur,
-      }
-    },
-    { minFactors: emptyFactor, strFactors: emptyFactor },
-  )
+  const { minFactors, strFactors } = mapPPSCCFactors(factors)
 
   const min = calculatePPSCCBaseline({ factors: minFactors, year, DWT })
-
   const striving = calculatePPSCCBaseline({ factors: strFactors, year, DWT })
-
   const yxLow = Decimal.mul(min, yxLowF)
-
   const yxUp = Decimal.mul(min, yxUpF)
 
   return {
@@ -101,3 +112,37 @@ const calculatePPSCCBaseline = ({
     ),
     Decimal.pow(DWT, factors.e ?? 0),
   )
+
+
+const mapPPSCCFactors = (factors: PPSSCPreferenceLine[]): {
+  minFactors: PPSSCPreferenceLine
+  strFactors: PPSSCPreferenceLine
+} => {
+  return factors.reduce<{
+    minFactors: PPSSCPreferenceLine
+    strFactors: PPSSCPreferenceLine
+  }>(
+    (acc, cur) => {
+      const key = (() => {
+        switch (cur.traj?.trim()) {
+          case 'MIN':
+            return 'minFactors'
+          case 'STR':
+            return 'strFactors'
+          default:
+            return null
+        }
+      })()
+
+      if (!key) {
+        return acc
+      }
+
+      return {
+        ...acc,
+        [key]: cur,
+      }
+    },
+    { minFactors: emptyFactor, strFactors: emptyFactor },
+  )
+}
