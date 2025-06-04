@@ -11,17 +11,17 @@ datasource db {
 model Vessel {
   id         Int      @id @default(autoincrement())
   name       String
-  imoNo      Int      @unique @map("imo_no")
-  vesselType Int      @map("vessel_type")
+  imoNo      Int      @unique @map("imoNo")
+  vesselType Int      @map("vesselType")
   emissions  Emission[]
 
   @@map("vessels")
 }
 
 model PPSCCReferenceLine {
-  id           Int      @id @default(autoincrement()) @map("row_id")
+  id           Int      @id @default(autoincrement()) @map("rowId")
   category     String
-  vesselTypeId Int      @map("vessel_type_id")
+  vesselTypeId Int      @map("vesselTypeId")
   size         String
   traj         String
   a            Float
@@ -30,41 +30,41 @@ model PPSCCReferenceLine {
   d            Float
   e            Float
 
-  @@map("pp_scc_reference_lines")
+  @@map("ppSccReferenceLines")
 }
 
 model Emission {
   id              Int      @id @default(autoincrement()) @map("eid")
-  vesselId        Int      @map("vessel_id")
-  logId           BigInt   @map("logid")
-  fromUtc         DateTime @map("from_utc")
-  toUtc           DateTime @map("to_utc")
+  vesselId        Int      @map("vesselId")
+  logId           BigInt   @map("logId")
+  fromUtc         DateTime @map("fromUtc")
+  toUtc           DateTime @map("toUtc")
   met2wco2        Float    @map("met2wco2")
   aet2wco2        Float    @map("aet2wco2")
   bot2wco2        Float    @map("bot2wco2")
   vrt2wco2        Float    @map("vrt2wco2")
-  totT2wco2       Float    @map("tot_t2wco2")
+  totT2wco2       Float    @map("totT2wco2")
   mew2wco2e       Float    @map("mew2wco2e")
   aew2wco2e       Float    @map("aew2wco2e")
   bow2wco2e       Float    @map("bow2wco2e")
   vrw2wco2e       Float    @map("vrw2wco2e")
-  totW2wco2       Float    @map("tot_w2wco2")
+  totW2wco2       Float    @map("totW2wco2")
   mesox           Float    @map("mesox")
   aesox           Float    @map("aesox")
   bosox           Float    @map("bosox")
   vrsox           Float    @map("vrsox")
-  totSox          Float    @map("tot_sox")
+  totSox          Float    @map("totSox")
   menox           Float    @map("menox")
   aenox           Float    @map("aenox")
-  totNox          Float    @map("tot_nox")
+  totNox          Float    @map("totNox")
   mepm10          Float    @map("mepm10")
   aepm10          Float    @map("aepm10")
-  totPm10         Float    @map("tot_pm10")
+  totPm10         Float    @map("totPm10")
   aerco2t2w       Float    @map("aerco2t2w")
   aerco2ew2w      Float    @map("aerco2ew2w")
   eeoico2ew2w     Float    @map("eeoico2ew2w")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdAt       DateTime @default(now()) @map("createdAt")
+  updatedAt       DateTime @updatedAt @map("updatedAt")
   vessel          Vessel   @relation(fields: [vesselId], references: [id])
 
   @@map("emissions")
