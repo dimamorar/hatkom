@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import { Ship } from "lucide-react";
@@ -12,21 +12,21 @@ import emissionsData from "../data/daily-log-emissions.json";
 import ppReferenceData from "../data/pp-reference.json";
 import vesselsData from "../data/vessels.json";
 import Decimal from "decimal.js";
-import {
-  avgDeviation,
-  formatQuarter,
-  getChartSeries,
-  isQuarterEnd,
-  sortQuartersChronologically,
-} from "@/utils";
+import { formatQuarter, getChartSeries, isQuarterEnd } from "@/utils";
 
 const Chart = () => {
   const [selectedVessel, setSelectedVessel] = useState("all");
 
   const calculatedData = useMemo(() => {
+    const filteredEmissions = emissionsData
+      .filter((emission) => isQuarterEnd(emission.TOUTC))
+      .sort(
+        (a, b) => new Date(a.TOUTC).getTime() - new Date(b.TOUTC).getTime()
+      );
+
     return vesselsData
       .map((vessel) => {
-        const vesselEmissions = emissionsData.filter(
+        const vesselEmissions = filteredEmissions.filter(
           (e) => e.VesselID === vessel.IMONo
         );
 
@@ -40,40 +40,33 @@ const Chart = () => {
 
         const ppMinBaseline = Math.abs(baselines.min.toNumber());
 
-        const quarterlyData = vesselEmissions
-          .filter((emission) => isQuarterEnd(emission.TOUTC))
+        return vesselEmissions
+          .filter((emission) => {
+            // filter out invalid AERCO2eW2W values
+            return emission.AERCO2eW2W > 0;
+          })
           .map((emission) => {
             const actualEmissions = emission.AERCO2eW2W;
             const deviation =
               ((actualEmissions - ppMinBaseline) / ppMinBaseline) * 100;
-
             return {
               vesselId: vessel.IMONo,
               quarter: formatQuarter(emission.TOUTC),
-              quarterEnd: emission.TOUTC,
               deviation: parseFloat(deviation.toFixed(2)),
             };
-          })
-          .filter((d): d is NonNullable<typeof d> => d !== null);
-
-        return {
-          vessel,
-          quarterlyData,
-          avgDeviation: avgDeviation(quarterlyData),
-        };
+          });
       })
       .filter((v): v is NonNullable<typeof v> => v !== null)
-      .filter((v) => v.quarterlyData.length > 0);
+      .flat()
+      .filter((v) => v !== null);
   }, []);
 
-  const allVesselsData = calculatedData.flatMap((v) => v.quarterlyData);
-
-  const selectedData = allVesselsData.filter((d) => {
+  const selectedData = calculatedData.filter((d) => {
     return selectedVessel === "all" || d.vesselId.toString() === selectedVessel;
   });
 
   const availableVessels = vesselsData.filter((v) =>
-    allVesselsData.some((d) => d.vesselId === v.IMONo)
+    calculatedData.some((d) => d.vesselId === v.IMONo)
   );
 
   const chartOptions: Highcharts.Options = {
@@ -94,9 +87,7 @@ const Chart = () => {
       verticalAlign: "bottom",
     },
     xAxis: {
-      categories: sortQuartersChronologically([
-        ...new Set(selectedData.map((d) => d.quarter)),
-      ]),
+      categories: [...new Set(selectedData.map((d) => d.quarter))],
       crosshair: true,
     },
     yAxis: {
@@ -113,7 +104,7 @@ const Chart = () => {
     },
     series: getChartSeries(selectedData, availableVessels, selectedVessel),
   };
-  console.log(chartOptions);
+
   return (
     <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
       <div className="max-w-7xl mx-auto">
