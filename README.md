@@ -1,44 +1,96 @@
 # Hatkom
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+A Next.js application for calculating and analyzing PPSCC baselines and carbon emissions data.
 
-## Getting Started
+## Live Demo
 
-First, run the development server:
+The application is deployed and available at: [hatkom.morar.dev](https://hatkom.morar.dev)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Tech Stack
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- [Next.js](https://nextjs.org) - React framework
+- [Prisma](https://www.prisma.io) - Database ORM
+- [Docker](https://www.docker.com) - Containerization
+- [PostgreSQL](https://www.postgresql.org) - Database
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Development Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Prerequisites
 
-## Learn More
+- Docker and Docker Compose
+- Node.js (for local development)
+- npm, yarn, or pnpm
 
-To learn more about Next.js, take a look at the following resources:
+### Development Workflow
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Start the development stack:**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```bash
+   docker compose -f docker-compose.dev.yml up --build
+   ```
 
-## Deploy on Vercel
+   This will start:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   - Next.js app in hot-reload mode
+   - PostgreSQL database
+   - Prisma Studio (port 5555)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. **Stop the development stack:**
 
-## Deployment
+   ```bash
+   docker compose -f docker-compose.dev.yml down
+   ```
 
-This project is automatically deployed to VPS using GitHub Actions.
+3. **Database Management:**
+   - Run migrations:
+     ```bash
+     docker compose -f docker-compose.dev.yml exec app npx prisma migrate dev --name init
+     ```
+   - Seed the database:
+     ```bash
+     docker compose -f docker-compose.dev.yml exec app npm run prisma:seed
+     ```
 
-Last deployment test: $(date +"%Y-%m-%d %H:%M:%S")
+### Access Points
+
+- Application: [http://localhost:3000](http://localhost:3000)
+- Prisma Studio: [http://localhost:5555](http://localhost:5555)
+
+### Development Features
+
+- Hot reload enabled for immediate code changes
+- Volume mounting for real-time code updates
+- Prisma Studio for database management
+
+## Production Deployment
+
+1. **Build and start the production stack:**
+
+   ```bash
+   docker compose -f docker-compose.yml up --build -d
+   ```
+
+2. **Database Management in Production:**
+   - Run migrations:
+     ```bash
+     docker compose -f docker-compose.yml exec app npx prisma migrate deploy
+     ```
+   - Seed the database (if needed):
+     ```bash
+     docker compose -f docker-compose.yml exec app npm run prisma:seed
+     ```
+
+## Data Processing Notes
+
+The application handles several edge cases in data processing:
+
+1. **Quarter-end Reports:**
+
+   - When multiple reports exist at the end of a quarter (e.g., `TOUTC:"2024-06-30T00:42:00.000Z"` and `TOUTC:"2024-06-30T06:30:00.000Z"`), the system calculates the average of values.
+
+2. **Zero Values:**
+
+   - Records with `AERCO2eW2W` value of 0 are automatically skipped in calculations.
+
+3. **PPSCC Baselines:**
+   - The `calculatePPSCCBaselines` function has been modularized for better code organization and maintainability.
