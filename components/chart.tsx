@@ -8,34 +8,72 @@ import {
   calculatePPSCCBaselines,
   getPPFactors,
 } from "../utils/calculate-pp-scc-baselines.util";
-import emissionsData from "../data/daily-log-emissions.json";
-import ppReferenceData from "../data/pp-reference.json";
-import vesselsData from "../data/vessels.json";
 import Decimal from "decimal.js";
 import { formatQuarter, getChartSeries, isQuarterEnd } from "@/utils";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getAllEmissions,
+  getAllReferences,
+  getAllVessels,
+} from "@/services/api/data.api";
+import {
+  Emission,
+  PPSCCReferenceLine,
+  Vessel,
+} from "@/prisma/generated/prisma";
 
 const Chart = () => {
-  const [selectedVessel, setSelectedVessel] = useState("all");
+  const [selectedVessel, setSelectedVessel] = useState<string>("all");
+
+  const { data: vessels, isLoading: isLoadingVessels } = useQuery<Vessel[]>({
+    queryKey: ["vessels"],
+    queryFn: getAllVessels,
+  });
+
+  const { data: emissions, isLoading: isLoadingEmissions } = useQuery<
+    Emission[]
+  >({
+    queryKey: ["emissions"],
+    queryFn: getAllEmissions,
+  });
+
+  const { data: references, isLoading: isLoadingReferences } = useQuery<
+    PPSCCReferenceLine[]
+  >({
+    queryKey: ["references"],
+    queryFn: getAllReferences,
+  });
+
+  const isLoading =
+    isLoadingVessels || isLoadingEmissions || isLoadingReferences;
 
   const calculatedData = useMemo(() => {
-    const filteredEmissions = emissionsData
-      .filter((emission) => isQuarterEnd(emission.TOUTC))
+    if (!vessels || !emissions || !references) return [];
+
+    const filteredEmissions = emissions
+      .filter((emission) => isQuarterEnd(emission.toUtc))
       .sort(
-        (a, b) => new Date(a.TOUTC).getTime() - new Date(b.TOUTC).getTime()
+        (a, b) => new Date(a.toUtc).getTime() - new Date(b.toUtc).getTime()
       );
 
-    return vesselsData
+    const result = vessels
       .map((vessel) => {
         const vesselEmissions = filteredEmissions.filter(
-          (e) => e.VesselID === vessel.IMONo
+          (e) => e.vesselId === vessel.id
         );
 
-        const ppFactors = getPPFactors(ppReferenceData, vessel);
+        const ppFactors = getPPFactors(references, vessel);
+
+        // Get the year from the first emission record for this vessel
+        const emissionYear =
+          vesselEmissions.length > 0
+            ? new Date(vesselEmissions[0].toUtc).getFullYear()
+            : new Date().getFullYear();
 
         const baselines = calculatePPSCCBaselines({
           factors: [ppFactors[0].minFactors, ppFactors[0].strFactors],
-          year: 2024,
-          DWT: new Decimal(vessel.MaxDeadWg),
+          year: emissionYear,
+          DWT: new Decimal(vessel?.maxDeadWg ?? 0),
         });
 
         const ppMinBaseline = Math.abs(baselines.min.toNumber());
@@ -43,15 +81,15 @@ const Chart = () => {
         return vesselEmissions
           .filter((emission) => {
             // filter out invalid AERCO2eW2W values
-            return emission.AERCO2eW2W > 0;
+            return emission.aerco2ew2w > 0;
           })
           .map((emission) => {
-            const actualEmissions = emission.AERCO2eW2W;
+            const actualEmissions = emission.aerco2ew2w;
             const deviation =
               ((actualEmissions - ppMinBaseline) / ppMinBaseline) * 100;
             return {
-              vesselId: vessel.IMONo,
-              quarter: formatQuarter(emission.TOUTC),
+              vesselId: vessel.imoNo,
+              quarter: formatQuarter(emission.toUtc),
               deviation: parseFloat(deviation.toFixed(2)),
             };
           });
@@ -59,15 +97,18 @@ const Chart = () => {
       .filter((v): v is NonNullable<typeof v> => v !== null)
       .flat()
       .filter((v) => v !== null);
-  }, []);
+
+    return result;
+  }, [vessels, emissions, references]);
 
   const selectedData = calculatedData.filter((d) => {
     return selectedVessel === "all" || d.vesselId.toString() === selectedVessel;
   });
 
-  const availableVessels = vesselsData.filter((v) =>
-    calculatedData.some((d) => d.vesselId === v.IMONo)
-  );
+  const availableVessels =
+    vessels?.filter((v) =>
+      calculatedData.some((d) => d.vesselId === v.imoNo)
+    ) ?? [];
 
   const chartOptions: Highcharts.Options = {
     chart: {
@@ -116,11 +157,12 @@ const Chart = () => {
                 value={selectedVessel}
                 onChange={(e) => setSelectedVessel(e.target.value)}
                 className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                disabled={isLoading}
               >
                 <option value="all">All Vessels</option>
                 {availableVessels.map((vessel) => (
-                  <option key={vessel.IMONo} value={vessel.IMONo.toString()}>
-                    {vessel.Name}
+                  <option key={vessel.imoNo} value={vessel.imoNo.toString()}>
+                    {vessel.name}
                   </option>
                 ))}
               </select>
@@ -129,7 +171,13 @@ const Chart = () => {
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-200">
-          <HighchartsReact highcharts={Highcharts} options={chartOptions} />
+          {isLoading ? (
+            <div className="flex items-center justify-center h-[500px]">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          ) : (
+            <HighchartsReact highcharts={Highcharts} options={chartOptions} />
+          )}
         </div>
       </div>
     </div>

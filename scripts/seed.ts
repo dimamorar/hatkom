@@ -10,7 +10,6 @@ async function main() {
   await prisma.vessel.deleteMany()
 
 
-  // First, create all vessels
   console.log('Seeding vessels...')
   const vesselMap = new Map()
   for (const vessel of vessels) {
@@ -21,12 +20,12 @@ async function main() {
         name: vessel.Name,
         imoNo: vessel.IMONo,
         vesselType: vessel.VesselType,
+        maxDeadWg: vessel.MaxDeadWg,
       },
     })
     vesselMap.set(vessel.IMONo, created.id)
   }
 
-  // Then, create PP reference lines
   console.log('Seeding PP reference lines...')
   for (const ref of ppReference) {
     await prisma.pPSCCReferenceLine.upsert({
@@ -47,7 +46,6 @@ async function main() {
     })
   }
 
-  // Finally, create emissions using the vessel IDs from the map
   console.log('Seeding emissions...')
   for (const emission of dailyLogEmissions) {
     const vesselId = vesselMap.get(emission.VesselID)

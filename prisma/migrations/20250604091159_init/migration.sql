@@ -1,0 +1,68 @@
+-- CreateTable
+CREATE TABLE "vessels" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "imoNo" INTEGER NOT NULL,
+    "vesselType" INTEGER NOT NULL,
+
+    CONSTRAINT "vessels_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ppSccReferenceLines" (
+    "rowId" SERIAL NOT NULL,
+    "category" TEXT NOT NULL,
+    "vesselTypeId" INTEGER NOT NULL,
+    "size" TEXT NOT NULL,
+    "traj" TEXT NOT NULL,
+    "a" DOUBLE PRECISION NOT NULL,
+    "b" DOUBLE PRECISION NOT NULL,
+    "c" DOUBLE PRECISION NOT NULL,
+    "d" DOUBLE PRECISION NOT NULL,
+    "e" DOUBLE PRECISION NOT NULL,
+
+    CONSTRAINT "ppSccReferenceLines_pkey" PRIMARY KEY ("rowId")
+);
+
+-- CreateTable
+CREATE TABLE "emissions" (
+    "eid" SERIAL NOT NULL,
+    "vesselId" INTEGER NOT NULL,
+    "logId" BIGINT NOT NULL,
+    "fromUtc" TIMESTAMP(3) NOT NULL,
+    "toUtc" TIMESTAMP(3) NOT NULL,
+    "met2wco2" DOUBLE PRECISION NOT NULL,
+    "aet2wco2" DOUBLE PRECISION NOT NULL,
+    "bot2wco2" DOUBLE PRECISION NOT NULL,
+    "vrt2wco2" DOUBLE PRECISION NOT NULL,
+    "totT2wco2" DOUBLE PRECISION NOT NULL,
+    "mew2wco2e" DOUBLE PRECISION NOT NULL,
+    "aew2wco2e" DOUBLE PRECISION NOT NULL,
+    "bow2wco2e" DOUBLE PRECISION NOT NULL,
+    "vrw2wco2e" DOUBLE PRECISION NOT NULL,
+    "totW2wco2" DOUBLE PRECISION NOT NULL,
+    "mesox" DOUBLE PRECISION NOT NULL,
+    "aesox" DOUBLE PRECISION NOT NULL,
+    "bosox" DOUBLE PRECISION NOT NULL,
+    "vrsox" DOUBLE PRECISION NOT NULL,
+    "totSox" DOUBLE PRECISION NOT NULL,
+    "menox" DOUBLE PRECISION NOT NULL,
+    "aenox" DOUBLE PRECISION NOT NULL,
+    "totNox" DOUBLE PRECISION NOT NULL,
+    "mepm10" DOUBLE PRECISION NOT NULL,
+    "aepm10" DOUBLE PRECISION NOT NULL,
+    "totPm10" DOUBLE PRECISION NOT NULL,
+    "aerco2t2w" DOUBLE PRECISION NOT NULL,
+    "aerco2ew2w" DOUBLE PRECISION NOT NULL,
+    "eeoico2ew2w" DOUBLE PRECISION NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "emissions_pkey" PRIMARY KEY ("eid")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "vessels_imoNo_key" ON "vessels"("imoNo");
+
+-- AddForeignKey
+ALTER TABLE "emissions" ADD CONSTRAINT "emissions_vesselId_fkey" FOREIGN KEY ("vesselId") REFERENCES "vessels"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

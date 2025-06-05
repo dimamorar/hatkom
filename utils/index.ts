@@ -1,12 +1,15 @@
-export function formatQuarter(dateString: string) {
+import { Vessel } from "@/prisma/generated/prisma";
+import type { SeriesLineOptions } from "highcharts";
+
+export function formatQuarter(dateString: Date) {
   const date = new Date(dateString);
   const month = date.getMonth() + 1;
   const year = date.getFullYear();
   return `Q${Math.ceil(month / 3)} ${year}`;
 };
 
-export function isQuarterEnd(toutc: string) {
-  const date = new Date(toutc);
+export function isQuarterEnd(toUtc: Date) {
+  const date = new Date(toUtc);
   const month = date.getMonth() + 1;
   const day = date.getDate();
 
@@ -18,7 +21,7 @@ export function isQuarterEnd(toutc: string) {
   ); 
 };
 
-interface QuarterlyData {
+type QuarterlyData = {
   vesselId: number;
   quarter: string;
   deviation: number;
@@ -49,14 +52,14 @@ export function processVesselData(data: QuarterlyData[], vesselId: number) {
 
 export function getChartSeries(
   data: QuarterlyData[],
-  vessels: any, // TODO: fix this
+  vessels: Vessel[],
   selectedVessel: string
-) {
+): SeriesLineOptions[] {
   if (selectedVessel === "all") {
-    return vessels.map((vessel) => ({
+    return vessels.map((vessel: Vessel) => ({
       type: "line",
-      name: vessel.Name,
-      data: processVesselData(data, vessel.IMONo).map((d) => d.deviation),
+      name: vessel.name,
+      data: processVesselData(data, vessel.imoNo).map((d) => d.deviation),
       marker: { enabled: true },
     }));
   }
@@ -65,7 +68,8 @@ export function getChartSeries(
     {
       type: "line",
       name:
-        vessels.find((v) => v.IMONo.toString() === selectedVessel)?.Name ||
+        vessels.find((v: Vessel) => v.imoNo.toString() === selectedVessel)
+          ?.name ||
         "Deviation",
       data: processVesselData(data, parseInt(selectedVessel)).map(
         (d) => d.deviation

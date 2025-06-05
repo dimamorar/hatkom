@@ -13,6 +13,7 @@ model Vessel {
   name       String
   imoNo      Int      @unique @map("imoNo")
   vesselType Int      @map("vesselType")
+  maxDeadWg  Int      @map("maxDeadWg")
   emissions  Emission[]
 
   @@map("vessels")

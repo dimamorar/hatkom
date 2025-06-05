@@ -1,38 +1,14 @@
+import { PPSCCReferenceLine, Vessel } from '@/prisma/generated/prisma'
 import Decimal from 'decimal.js'
 
-type PPReference = {
-  RowID: number
-  Category: string
-  VesselTypeID: number
-  Size: string
-  Traj: string
+
+type PPSSCPreferenceLine = Omit<PPSCCReferenceLine, 'id' | 'category' | 'vesselTypeId' | 'size'> & {
   a: number
   b: number
   c: number
   d: number
   e: number
-}
-
-type Vessel = {
-  Name: string
-  IMONo: number
-  VesselType: number
-  MaxDeadWg: number
-}
-
-type PPSSCPreferenceLine = {
-  a?: number
-  b?: number
-  c?: number
-  d?: number
-  e?: number
-  Traj?: string
-}
-
-type CalculatePPBaselinesArgs = {
-  factors: PPSSCPreferenceLine[]
-  year: number
-  DWT: Decimal
+  traj: string
 }
 
 type PPBaselines = {
@@ -42,11 +18,16 @@ type PPBaselines = {
   yxUp: Decimal
 }
 
+type BaseCalculateArgs = {
+  year: number
+  DWT: Decimal
+}
+
 const yxLowF = 0.33
 const yxUpF = 1.67
 
 const emptyFactor: PPSSCPreferenceLine = {
-  Traj: '',
+  traj: '',
   a: 0,
   b: 0,
   c: 0,
@@ -63,18 +44,18 @@ const emptyFactor: PPSSCPreferenceLine = {
  * Baseline = (a * year³ + b * year² + c * year + d) * DWT^e
  * 
  */
-export const getPPFactors = (ppReferenceData: PPReference[], vessel: Vessel) => {
+export const getPPFactors = (ppReferenceData: PPSCCReferenceLine[], vessel: Vessel) => {
 
   const minTrajectory = ppReferenceData.find(
     (ref) =>
-      ref.VesselTypeID === vessel.VesselType &&
-      ref.Traj?.trim().toUpperCase() === "MIN"
+      ref.vesselTypeId === vessel.vesselType &&
+      ref.traj?.trim().toUpperCase() === "MIN"
   );
 
   const strTrajectory = ppReferenceData.find(
     (ref) =>
-      ref.VesselTypeID === vessel.VesselType &&
-      ref.Traj?.trim().toUpperCase() === "STR"
+      ref.vesselTypeId === vessel.vesselType &&
+      ref.traj?.trim().toUpperCase() === "STR"
   );
 
   return [{
@@ -100,6 +81,12 @@ export const getPPFactors = (ppReferenceData: PPReference[], vessel: Vessel) => 
  * @param DWT - Vessel's Deadweight Tonnage in metric tons
  * @returns PPBaselines object containing all calculated baseline values
  */
+
+
+type CalculatePPBaselinesArgs = BaseCalculateArgs & {
+  factors: PPSSCPreferenceLine[]
+}
+
 export const calculatePPSCCBaselines = ({
   factors,
   year,
@@ -126,12 +113,6 @@ export const calculatePPSCCBaselines = ({
     yxLow,
     yxUp,
   }
-}
-
-type CalculateBaselineArgs = {
-  factors: PPSSCPreferenceLine
-  year: number
-  DWT: Decimal
 }
 
 /**
@@ -161,6 +142,11 @@ type CalculateBaselineArgs = {
  * @param DWT - Vessel's Deadweight Tonnage
  * @returns Decimal - Calculated baseline value
  */
+
+type CalculateBaselineArgs = BaseCalculateArgs & {
+  factors: PPSSCPreferenceLine
+}
+
 const calculatePPSCCBaseline = ({
   factors,
   year,
@@ -203,7 +189,7 @@ const mapPPSCCFactors = (factors: PPSSCPreferenceLine[]): {
   }>(
     (acc, cur) => {
       const key = (() => {
-        switch (cur.Traj?.trim()) {
+        switch (cur.traj?.trim()) {
           case 'MIN':
             return 'minFactors'  // Minimum required baseline
           case 'STR':
