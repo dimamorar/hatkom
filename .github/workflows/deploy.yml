@@ -38,5 +38,12 @@ jobs:
           script: |
             cd /var/www/app
             git pull origin main
+            # Create .env file with individual secrets
+            cat > .env << EOF
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+            DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@db:5432/${{ secrets.POSTGRES_DB }}?schema=public
+            EOF
             docker-compose down
             docker-compose up -d --build
